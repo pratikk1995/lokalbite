@@ -1,0 +1,124 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CUSTOMER
+  STORE_OWNER
+  DELIVERY_BOY
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAYMENT_CONFIRMED
+  ACCEPTED
+  PREPARING
+  READY_FOR_PICKUP
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id         String    @id @default(uuid())
+  phone      String    @unique
+  name       String?
+  role       Role      @default(CUSTOMER)
+  otp        String?
+  otpExpiry  DateTime?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  stores     Store[]   // User has one or more stores if STORE_OWNER
+  orders     Order[]   @relation("CustomerOrders")
+  deliveries Order[]   @relation("DeliveryBoyOrders")
+  addresses  Address[]
+}
+
+model Store {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  address     String
+  phone       String
+  category    String
+  isOpen      Boolean   @default(true)
+  isApproved  Boolean   @default(false)
+  rating      Float     @default(5.0)
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+  orders      Order[]
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  category    String
+  available   Boolean     @default(true)
+  storeId     String
+  store       Store       @relation(fields: [storeId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  orderItems  OrderItem[]
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  label       String   // e.g. Home, Work, Other
+  fullAddress String
+  landmark    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders      Order[]
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  customerId    String
+  customer      User        @relation("CustomerOrders", fields: [customerId], references: [id])
+  storeId       String
+  store         Store       @relation(fields: [storeId], references: [id])
+  deliveryBoyId String?
+  deliveryBoy   User?       @relation("DeliveryBoyOrders", fields: [deliveryBoyId], references: [id])
+  addressId     String
+  address       Address     @relation(fields: [addressId], references: [id])
+  status        OrderStatus @default(PENDING_PAYMENT)
+  subtotal      Float
+  deliveryFee   Float       @default(20.0) // ₹20 flat
+  totalAmount   Float
+  notes         String?
+  cancelReason  String?
+  paymentLinkId String?
+  paymentId     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  orderItems    OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float    // snapshot at time of order
+}
