@@ -181,7 +181,9 @@ class _MainWebViewState extends State<MainWebView> {
     final WebViewController controller = WebViewController();
 
     if (controller.platform is AndroidWebViewController) {
-      AndroidWebViewController.enableDebugging(true);
+      if (const bool.fromEnvironment('dart.vm.product') == false) {
+        AndroidWebViewController.enableDebugging(true);
+      }
       (controller.platform as AndroidWebViewController)
           .setGeolocationPermissionsPromptCallbacks(
         onShowPrompt: (request) async {
