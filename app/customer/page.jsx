@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CustomerNav from '@/components/CustomerNav';
+import { useLanguage } from '@/components/LanguageProvider';
+import LocationPicker from '@/components/LocationPicker';
 
 const CATEGORIES = ['All', 'Restaurant', 'Grocery', 'Bakery', 'Sweets', 'Meat'];
 
@@ -12,6 +14,8 @@ export default function CustomerDashboard() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [userName, setUserName] = useState('');
+  const [currentLocation, setCurrentLocation] = useState('');
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Fetch profile
@@ -19,7 +23,7 @@ export default function CustomerDashboard() {
       .then((res) => res.json())
       .then((data) => {
         if (data.user) {
-          setUserName(data.user.name || 'Friend');
+          setUserName(data.user.name || t('Friend'));
         }
       })
       .catch((err) => console.error(err));
@@ -47,31 +51,27 @@ export default function CustomerDashboard() {
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 pt-8 pb-10 rounded-b-[2rem] shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <div>
-            <p className="text-orange-100 text-xs font-bold uppercase tracking-wider">
-              Deliver To
-            </p>
-            <h2 className="text-lg font-extrabold flex items-center gap-1">
-              📍 Rural India <span className="text-[10px] font-normal bg-orange-400 bg-opacity-40 px-2 py-0.5 rounded-full">LokaBite</span>
-            </h2>
-          </div>
+          <LocationPicker 
+            currentLocation={currentLocation} 
+            onLocationUpdate={setCurrentLocation} 
+          />
           <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center font-bold text-lg border border-white border-opacity-20">
             {userName ? userName.charAt(0).toUpperCase() : '👤'}
           </div>
         </div>
 
         <h1 className="text-2xl font-extrabold mb-1">
-          Namaste, {userName || 'Friend'}!
+          {t('Namaste')}, {userName || t('Friend')}!
         </h1>
         <p className="text-orange-100 text-sm mb-4">
-          Fresh meals & daily groceries delivered instantly.
+          {t('Fresh meals & daily groceries delivered instantly.')}
         </p>
 
         {/* Search */}
         <div className="relative shadow-md rounded-2xl overflow-hidden bg-white text-slate-800">
           <input
             type="text"
-            placeholder="Search stores, restaurants, categories..."
+            placeholder={t('Search stores, restaurants, categories...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-3 outline-none font-medium text-sm"
@@ -84,7 +84,7 @@ export default function CustomerDashboard() {
               onClick={() => setSearch('')}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold bg-slate-100 px-2 py-0.5 rounded-full"
             >
-              Clear
+              {t('Clear')}
             </button>
           )}
         </div>
@@ -103,7 +103,7 @@ export default function CustomerDashboard() {
                   : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              {cat}
+              {t(cat)}
             </button>
           ))}
         </div>
@@ -112,7 +112,7 @@ export default function CustomerDashboard() {
       {/* Stores List */}
       <div className="px-4 py-4 flex-1">
         <h3 className="text-sm font-extrabold text-slate-800 mb-3 tracking-wide uppercase">
-          {category === 'All' ? 'Available Stores' : `${category} Shops`}
+          {category === 'All' ? t('Available Stores') : `${t(category)} ${t('Shops')}`}
         </h3>
 
         {loading ? (
@@ -124,9 +124,9 @@ export default function CustomerDashboard() {
         ) : filteredStores.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
             <span className="text-4xl mb-2 block">🏪</span>
-            <p className="text-slate-500 font-bold">No shops active</p>
+            <p className="text-slate-500 font-bold">{t('No shops active')}</p>
             <p className="text-slate-400 text-xs mt-1">
-              Select another category or modify search query.
+              {t('Select another category or modify search query.')}
             </p>
           </div>
         ) : (
@@ -140,11 +140,11 @@ export default function CustomerDashboard() {
                         {store.name}
                       </h4>
                       <span className="text-[10px] font-bold bg-orange-50 text-orange-600 border border-orange-100 px-1.5 py-0.5 rounded">
-                        {store.category}
+                        {t(store.category)}
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 line-clamp-1 mb-2">
-                      {store.description || 'No description available.'}
+                      {store.description || t('No description available.')}
                     </p>
                     <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
                       <span>⭐ {store.rating?.toFixed(1) || '5.0'}</span>
@@ -152,7 +152,7 @@ export default function CustomerDashboard() {
                       <span className="truncate">📍 {store.address}</span>
                     </div>
                   </div>
-                  <div className={`w-3.5 h-3.5 rounded-full border border-white shadow-sm shrink-0 mt-1.5 ${store.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} title={store.isOpen ? 'Open' : 'Closed'} />
+                  <div className={`w-3.5 h-3.5 rounded-full border border-white shadow-sm shrink-0 mt-1.5 ${store.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`} title={store.isOpen ? t('Open') : t('Closed')} />
                 </div>
               </Link>
             ))}

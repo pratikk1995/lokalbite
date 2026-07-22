@@ -151,8 +151,8 @@ export default function CustomerCart() {
       // Step 3: Clear local cart
       localStorage.removeItem('lokabite_cart');
 
-      // Step 4: Redirect to Razorpay (opens in browser tab/web frame)
-      window.location.href = paymentData.short_url;
+      // Step 4: Redirect to Instamojo Payment Page
+      window.location.href = paymentData.payment_url;
     } catch (err) {
       setError(err.message);
       setLoading(false);

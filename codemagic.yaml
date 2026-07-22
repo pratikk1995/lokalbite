@@ -1,0 +1,39 @@
+workflows:
+  customer-app:
+    name: Build Customer App
+    working_directory: flutter_app
+    environment:
+      flutter: default
+    scripts:
+      - name: Get packages
+        script: flutter pub get
+      - name: Build Android App
+        script: flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+
+  delivery-app:
+    name: Build Delivery App
+    working_directory: flutter_delivery_app
+    environment:
+      flutter: default
+    scripts:
+      - name: Get packages
+        script: flutter pub get
+      - name: Build Android App
+        script: flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+
+  store-app:
+    name: Build Store App
+    working_directory: flutter_store_app
+    environment:
+      flutter: default
+    scripts:
+      - name: Get packages
+        script: flutter pub get
+      - name: Build Android App
+        script: flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk

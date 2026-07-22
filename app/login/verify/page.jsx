@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useLanguage } from '@/components/LanguageProvider';
 
 function VerifyOtpContent() {
   const [phone, setPhone] = useState('');
@@ -11,6 +12,7 @@ function VerifyOtpContent() {
   const [error, setError] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const p = searchParams.get('phone');
@@ -24,7 +26,7 @@ function VerifyOtpContent() {
   const handleVerify = async (e) => {
     e.preventDefault();
     if (!otp || otp.trim().length !== 6) {
-      setError('Please enter a valid 6-digit OTP code');
+      setError(t('Please enter a valid 6-digit OTP code'));
       return;
     }
 
@@ -59,16 +61,16 @@ function VerifyOtpContent() {
         </div>
 
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-2">
-          Verify OTP
+          {t('Verify OTP')}
         </h1>
         <p className="text-sm text-slate-500 text-center mb-8">
-          We sent a 6-digit code to <span className="font-semibold text-slate-700">{phone}</span>.
+          {t('We sent a 6-digit code to')} <span className="font-semibold text-slate-700">{phone}</span>.
         </p>
 
         <form onSubmit={handleVerify} className="w-full space-y-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              OTP Code
+              {t('OTP Code')}
             </label>
             <input
               type="text"
@@ -86,7 +88,7 @@ function VerifyOtpContent() {
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              Full Name <span className="text-slate-300 font-normal">(Only if new user)</span>
+              {t('Full Name')} <span className="text-slate-300 font-normal">{t('Only if new user')}</span>
             </label>
             <input
               type="text"
@@ -115,10 +117,10 @@ function VerifyOtpContent() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Verifying...
+                {t('Verifying...')}
               </span>
             ) : (
-              'Verify & Continue'
+              t('Verify & Continue')
             )}
           </button>
         </form>
@@ -132,7 +134,7 @@ function VerifyOtpContent() {
             onClick={() => router.push('/login')}
             className="text-xs text-orange-500 font-semibold mt-2 hover:underline"
           >
-            Go Back
+            {t('Go Back')}
           </button>
         </div>
       </div>

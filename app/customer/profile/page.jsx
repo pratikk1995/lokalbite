@@ -9,7 +9,6 @@ export default function CustomerProfile() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [escalating, setEscalating] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -26,29 +25,6 @@ export default function CustomerProfile() {
       })
       .finally(() => setLoading(false));
   }, [router]);
-
-  const handleBecomeDeliveryBoy = async () => {
-    const confirmEscalation = window.confirm(
-      'Would you like to register as a LokaBite delivery boy? You will be able to accept orders, see addresses, and earn ₹20 per delivery.'
-    );
-    if (!confirmEscalation) return;
-
-    setEscalating(true);
-    try {
-      const res = await fetch('/api/delivery/register', {
-        method: 'POST'
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to register');
-
-      // Success, route to delivery dashboard
-      router.push('/delivery');
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setEscalating(false);
-    }
-  };
 
   const handleLogout = async () => {
     const confirmLogout = window.confirm('Are you sure you want to logout?');
@@ -95,55 +71,33 @@ export default function CustomerProfile() {
       </div>
 
       <div className="p-4 space-y-4 flex-1">
-        {/* Store Dashboard link */}
-        {user?.role === 'STORE_OWNER' || user?.role === 'ADMIN' ? (
-          <div className="card bg-white">
-            <h3 className="font-extrabold text-slate-800 text-sm mb-1">🏪 Store Dashboard</h3>
-            <p className="text-xs text-slate-400 mb-3">
-              You are registered as a Store Owner. Manage products, toggle store, and view active orders.
-            </p>
-            <Link href="/store" className="btn-primary py-2.5 text-xs font-bold w-full">
-              Enter Store Workspace
-            </Link>
-          </div>
-        ) : (
-          <div className="card bg-white">
-            <h3 className="font-extrabold text-slate-800 text-sm mb-1">🏪 Become a Store Owner</h3>
-            <p className="text-xs text-slate-400 mb-3">
-              Register your grocery store or kitchen on LokaBite. Sell fresh food to customers in your village.
-            </p>
-            <Link href="/store/register" className="btn-secondary py-2.5 text-slate-700 text-xs font-bold w-full text-center">
-              Register My Store
-            </Link>
-          </div>
-        )}
-
-        {/* Delivery workspace link */}
-        {user?.role === 'DELIVERY_BOY' || user?.role === 'ADMIN' ? (
-          <div className="card bg-white">
-            <h3 className="font-extrabold text-slate-800 text-sm mb-1">🚴 Delivery Partner Workspace</h3>
-            <p className="text-xs text-slate-400 mb-3">
-              You are registered as a Delivery Boy. View pending pickup orders, earn ₹20 flat per delivery.
-            </p>
-            <Link href="/delivery" className="btn-primary py-2.5 text-xs font-bold w-full">
-              Enter Delivery Workspace
-            </Link>
-          </div>
-        ) : (
-          <div className="card bg-white">
-            <h3 className="font-extrabold text-slate-800 text-sm mb-1">🚴 Earn Money Delivering</h3>
-            <p className="text-xs text-slate-400 mb-3">
-              Deliver food in your spare time. Make ₹20 flat on every delivery. Instant self-activation.
-            </p>
+        {/* Language Preferences */}
+        <div className="card bg-white">
+          <h3 className="font-extrabold text-slate-800 text-sm mb-1">🌐 App Language</h3>
+          <p className="text-xs text-slate-400 mb-3">
+            Choose your preferred language for the LokaBite application.
+          </p>
+          <div className="flex gap-2">
             <button
-              onClick={handleBecomeDeliveryBoy}
-              disabled={escalating}
-              className="btn-secondary py-2.5 text-slate-700 text-xs font-bold w-full"
+              onClick={() => {
+                localStorage.setItem('lokabite_language', 'en');
+                window.location.reload();
+              }}
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
             >
-              {escalating ? 'Activating Partner Account...' : 'Become a Delivery Partner'}
+              English
+            </button>
+            <button
+              onClick={() => {
+                localStorage.setItem('lokabite_language', 'mr');
+                window.location.reload();
+              }}
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
+            >
+              मराठी (Marathi)
             </button>
           </div>
-        )}
+        </div>
 
         {/* Address management */}
         <div className="card bg-white">

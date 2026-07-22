@@ -27,6 +27,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "15c6f963-e54f-417b-a7a7-9dc24f7631ea"
+      }
+    },
+    "owner": "pratikk1995"
   }
 }

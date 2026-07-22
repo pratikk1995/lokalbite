@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
+import { createPaymentRequest } from '@/lib/instamojo';
 import { createPaymentLink } from '@/lib/razorpay';
 
 export async function POST(req) {
@@ -32,21 +33,41 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Order is not in pending payment status' }, { status: 400 });
     }
 
-    // Call payment generator
-    const linkResult = await createPaymentLink({
-      orderId: order.id,
-      amount: order.totalAmount,
-      customerName: order.customer.name,
-      customerPhone: order.customer.phone,
-    });
+    let paymentUrl = '';
+    let paymentLinkId = '';
 
-    // Save link reference
+    // Prefer Razorpay if configured, otherwise fallback to Instamojo
+    if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+      const paymentResult = await createPaymentLink({
+        orderId: order.id,
+        amount: order.totalAmount,
+        customerName: order.customer.name,
+        customerPhone: order.customer.phone,
+      });
+      paymentLinkId = paymentResult.id;
+      paymentUrl = paymentResult.short_url;
+    } else {
+      const paymentResult = await createPaymentRequest({
+        orderId: order.id,
+        amount: order.totalAmount,
+        customerName: order.customer.name,
+        customerPhone: order.customer.phone,
+        customerEmail: order.customer.email,
+      });
+      paymentLinkId = paymentResult.id;
+      paymentUrl = paymentResult.payment_url;
+    }
+
+    // Save payment request ID
     await prisma.order.update({
       where: { id: orderId },
-      data: { paymentLinkId: linkResult.id }
+      data: { paymentLinkId }
     });
 
-    return NextResponse.json({ success: true, short_url: linkResult.short_url });
+    return NextResponse.json({ 
+      success: true, 
+      payment_url: paymentUrl 
+    });
   } catch (error) {
     console.error('API Payments POST Error:', error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });

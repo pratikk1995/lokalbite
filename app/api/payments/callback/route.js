@@ -5,8 +5,15 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const orderId = searchParams.get('orderId');
-    const paymentId = searchParams.get('razorpay_payment_id');
-    const paymentStatus = searchParams.get('razorpay_payment_link_status');
+    
+    // Instamojo fields
+    const paymentId = searchParams.get('payment_id');
+    const paymentStatus = searchParams.get('payment_status');
+    const paymentRequestId = searchParams.get('payment_request_id');
+    
+    // Razorpay fields
+    const razorpayPaymentId = searchParams.get('razorpay_payment_id');
+    const razorpayPaymentLinkStatus = searchParams.get('razorpay_payment_link_status');
 
     if (!orderId) {
       return new NextResponse('Missing Order ID', { status: 400 });
@@ -20,14 +27,26 @@ export async function GET(req) {
       return new NextResponse('Order not found', { status: 404 });
     }
 
-    // Update status if payment status is paid (or if no status parameter is supplied, assume success for ease of testing)
-    const isPaid = !paymentStatus || paymentStatus === 'paid' || paymentStatus === 'confirmed';
+    // Determine if paid based on gateway
+    let isPaid = false;
+    let finalPaymentId = '';
+
+    if (razorpayPaymentLinkStatus) {
+      // Razorpay flow
+      isPaid = razorpayPaymentLinkStatus === 'paid';
+      finalPaymentId = razorpayPaymentId || `rzp_mock_${Math.random().toString(36).substring(7)}`;
+    } else {
+      // Instamojo flow
+      isPaid = !paymentStatus || paymentStatus === 'Credit' || paymentStatus === 'paid';
+      finalPaymentId = paymentId || `im_mock_${Math.random().toString(36).substring(7)}`;
+    }
+
     if (isPaid && order.status === 'PENDING_PAYMENT') {
       await prisma.order.update({
         where: { id: orderId },
         data: {
           status: 'PAYMENT_CONFIRMED',
-          paymentId: paymentId || `pay_mock_${Math.random().toString(36).substring(7)}`
+          paymentId: finalPaymentId
         }
       });
     }

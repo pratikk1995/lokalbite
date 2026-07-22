@@ -13,37 +13,69 @@ export default function DeliveryWorkspace() {
   // Data States
   const [availableOrders, setAvailableOrders] = useState([]);
   const [myOrders, setMyOrders] = useState([]);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [acceptingId, setAcceptingId] = useState('');
   const [completingId, setCompletingId] = useState('');
+  const [activating, setActivating] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    fetchProfileAndData();
     // Poll available orders every 5 seconds
     const interval = setInterval(fetchAvailableOnly, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  const fetchData = async () => {
+  const fetchProfileAndData = async () => {
     setLoading(true);
     try {
-      // Fetch available deliveries
-      const availRes = await fetch('/api/orders/available');
-      if (availRes.ok) {
-        const availData = await availRes.json();
-        setAvailableOrders(availData.orders || []);
-      }
+      // Fetch user profile
+      const userRes = await fetch('/api/auth/me');
+      const userData = await userRes.json();
+      if (userRes.ok && userData.user) {
+        setUser(userData.user);
+        
+        // If they are a delivery boy or admin, fetch order data
+        if (userData.user.role === 'DELIVERY_BOY' || userData.user.role === 'ADMIN') {
+          // Fetch available deliveries
+          const availRes = await fetch('/api/orders/available');
+          if (availRes.ok) {
+            const availData = await availRes.json();
+            setAvailableOrders(availData.orders || []);
+          }
 
-      // Fetch active/past deliveries
-      const myRes = await fetch('/api/orders');
-      if (myRes.ok) {
-        const myData = await myRes.json();
-        setMyOrders(myData.orders || []);
+          // Fetch active/past deliveries
+          const myRes = await fetch('/api/orders');
+          if (myRes.ok) {
+            const myData = await myRes.json();
+            setMyOrders(myData.orders || []);
+          }
+        }
+      } else {
+        router.push('/login');
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleActivateRider = async () => {
+    setActivating(true);
+    try {
+      const res = await fetch('/api/delivery/register', {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to activate');
+      
+      // Refresh workspace
+      await fetchProfileAndData();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setActivating(false);
     }
   };
 
@@ -72,7 +104,7 @@ export default function DeliveryWorkspace() {
       if (!res.ok) throw new Error(data.error || 'Failed to claim delivery');
 
       // Refresh data and switch to active tab
-      await fetchData();
+      await fetchProfileAndData();
       setActiveTab('active');
     } catch (err) {
       alert(err.message);
@@ -97,7 +129,7 @@ export default function DeliveryWorkspace() {
       if (!res.ok) throw new Error(data.error || 'Failed to complete order');
 
       // Refresh data and switch to earnings tab
-      await fetchData();
+      await fetchProfileAndData();
       setActiveTab('earnings');
     } catch (err) {
       alert(err.message);
@@ -110,6 +142,40 @@ export default function DeliveryWorkspace() {
   const activeDeliveries = myOrders.filter(o => o.status === 'OUT_FOR_DELIVERY');
   const completedDeliveries = myOrders.filter(o => o.status === 'DELIVERED');
   const earnings = completedDeliveries.length * 20; // ₹20 flat fee per delivery
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-900 text-white min-h-screen">
+        <svg className="animate-spin h-8 w-8 text-teal-500 mb-3" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Syncing Rider Status...</p>
+      </div>
+    );
+  }
+
+  // Prompt activation screen if they aren't a rider or admin
+  if (user && user.role !== 'DELIVERY_BOY' && user.role !== 'ADMIN') {
+    return (
+      <div className="flex-1 bg-slate-950 flex flex-col justify-center items-center p-6 text-center text-white min-h-screen">
+        <div className="w-20 h-20 bg-teal-500 bg-opacity-10 rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-teal-500 border-opacity-20 animate-bounce">
+          <span className="text-4xl">🚴</span>
+        </div>
+        <h2 className="text-xl font-extrabold text-white">Become a LokaBite Rider</h2>
+        <p className="text-slate-400 text-xs mt-2 mb-6 max-w-xs mx-auto leading-relaxed">
+          Start delivering local food and groceries in your village. Earn ₹20 flat for every successful delivery run!
+        </p>
+        <button
+          onClick={handleActivateRider}
+          disabled={activating}
+          className="w-full max-w-xs py-3.5 bg-teal-500 hover:bg-teal-600 text-slate-950 font-black rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50 text-sm tracking-wider uppercase"
+        >
+          {activating ? 'Activating Rider Account...' : 'Activate Rider Account Now'}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 bg-slate-50 flex flex-col pb-8">
